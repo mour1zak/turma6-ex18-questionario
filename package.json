@@ -1,0 +1,13 @@
+{
+  "name": "turma6-ex18-questionario",
+  "version": "1.0.0",
+  "description": "Sistema de Cadastro de Questionários",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx json-server --watch db.json --port 3000",
+    "dev": "npx live-server --port=5500"
+  },
+  "dependencies": {
+    "json-server": "^0.17.4"
+  }
+}
