@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Respostas</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header>
+        <h1>📊 Respostas</h1>
+        <nav>
+            <a href="../index.html">Início</a>
+            <a href="perguntas.html">Perguntas</a>
+            <a href="formularios.html">Formulários</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Visão Geral (sem ID na URL) -->
+        <div id="visao-geral">
+            <h2>Todos os Formulários</h2>
+            <p id="resumo-total"></p>
+            <div id="lista-formularios">
+                <!-- Lista de formulários será injetada aqui -->
+            </div>
+        </div>
+
+        <!-- Visão Detalhada (com ID na URL) -->
+        <div id="visao-detalhada" style="display: none;">
+            <button onclick="voltarParaLista()" style="margin-bottom: 20px;">← Voltar para lista</button>
+            <h2 id="titulo-formulario">Carregando formulário...</h2>
+            <p id="total-respostas"></p>
+            <div id="container-respostas">
+                <!-- Tabela de respostas será injetada aqui -->
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/respostas/listar-respostas.js"></script>
+</body>
+</html>

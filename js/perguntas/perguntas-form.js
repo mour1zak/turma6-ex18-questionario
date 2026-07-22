@@ -1,4 +1,6 @@
 const API_URL = 'http://localhost:3000/perguntas';
+const API_URL_FORM = 'http://localhost:3000/formularios';
+const API_URL_RESPOSTA = 'http://localhost:3000/respostas';
 
 // Verifica se estamos editando (se tem ?id= na URL)
 const urlParams = new URLSearchParams(window.location.search);
@@ -8,6 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('form-pergunta');
     const btnSalvar = form.querySelector('button[type="submit"]');
     const containerAlternativas = document.getElementById('container-alternativas');
+    const tipoSelect = document.getElementById('tipo');
+    const alternativasTextarea = document.getElementById('alternativas');
 
     // Se for edição, carrega os dados
     if (idEditando) {
@@ -16,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Mostra/esconde o campo de alternativas baseado no tipo
-    document.getElementById('tipo').addEventListener('change', function() {
+    tipoSelect.addEventListener('change', function() {
         if (this.value === 'multipla_escolha' || this.value === 'checkbox') {
             containerAlternativas.style.display = 'block';
         } else {
@@ -25,18 +29,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Dispara o evento change ao carregar para esconder/mostrar corretamente
-    document.getElementById('tipo').dispatchEvent(new Event('change'));
+    tipoSelect.dispatchEvent(new Event('change'));
 
     // Evento de Submit
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
         
         const enunciado = document.getElementById('enunciado').value.trim();
-        const tipo = document.getElementById('tipo').value;
+        const tipo = tipoSelect.value;
         const obrigatoria = document.getElementById('obrigatoria').checked;
-        const alternativasTexto = document.getElementById('alternativas').value;
+        const alternativasTexto = alternativasTextarea.value;
 
-        // --- VALIDAÇÕES (Seção 5 do Enunciado) ---
+        // --- VALIDAÇÕES BÁSICAS ---
         if (!enunciado) {
             alert('O enunciado não pode ser vazio!');
             return;
@@ -56,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            // Validação de quantidade (Seção 3 do Enunciado)
+            // Validação de quantidade
             if (tipo === 'multipla_escolha') {
                 if (alternativas.length < 2 || alternativas.length > 10) {
                     alert('Múltipla Escolha deve ter entre 2 e 10 alternativas!');
@@ -70,16 +74,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        // 🔴 REGRA 8: Verificar se a pergunta já foi respondida
+        if (idEditando) {
+            const podeAlterar = await verificarSePodeAlterarPergunta(idEditando, tipo, alternativas);
+            if (!podeAlterar) {
+                return; // Bloqueia o salvamento
+            }
+        }
+
         // Monta o objeto
         const pergunta = {
             enunciado,
             tipo,
             obrigatoria,
             alternativas,
-            criadaEm: idEditando ? undefined : new Date().toISOString() // Mantém a data original se for edição
+            criadaEm: idEditando ? undefined : new Date().toISOString()
         };
 
-        // Remove o campo criadaEm se for undefined para não bugar o json-server
         if (!pergunta.criadaEm) delete pergunta.criadaEm;
 
         try {
@@ -112,6 +123,68 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
+
+// 🔴 REGRA 8: Função para verificar se pode alterar tipo/alternativas
+async function verificarSePodeAlterarPergunta(idPergunta, novoTipo, novasAlternativas) {
+    try {
+        // 1. Buscar todos os formulários publicados
+        const resFormularios = await fetch(`${API_URL_FORM}?status=publicado`);
+        const formulariosPublicados = await resFormularios.json();
+
+        // 2. Verificar se esta pergunta está em algum formulário publicado
+        const formularioComPergunta = formulariosPublicados.find(f => 
+            f.perguntas.includes(parseInt(idPergunta))
+        );
+
+        if (!formularioComPergunta) {
+            // A pergunta não está em nenhum formulário publicado, pode alterar livremente
+            return true;
+        }
+
+        // 3. Verificar se o formulário já tem respostas
+        const resRespostas = await fetch(`${API_URL_RESPOSTA}?formularioId=${formularioComPergunta.id}`);
+        const respostas = await resRespostas.json();
+
+        if (respostas.length === 0) {
+            // Formulário publicado mas sem respostas, pode alterar
+            return true;
+        }
+
+        // 4. Formulário publicado E tem respostas - aplicar restrições da Regra 8
+        // Buscar a pergunta atual para comparar
+        const resPerguntaAtual = await fetch(`${API_URL}/${idPergunta}`);
+        const perguntaAtual = await resPerguntaAtual.json();
+
+        // Verificar se está tentando mudar o TIPO
+        if (perguntaAtual.tipo !== novoTipo) {
+            alert('⚠️ REGRA 8: Não é possível alterar o tipo de uma pergunta que já foi respondida em formulário publicado. Você deve criar uma nova pergunta.');
+            return false;
+        }
+
+        // Verificar se está tentando mudar as ALTERNATIVAS (para múltipla escolha ou checkbox)
+        if ((novoTipo === 'multipla_escolha' || novoTipo === 'checkbox')) {
+            const alternativasAtuais = perguntaAtual.alternativas || [];
+            
+            // Comparar se as alternativas são diferentes
+            const mesmasAlternativas = 
+                alternativasAtuais.length === novasAlternativas.length &&
+                alternativasAtuais.every((alt, index) => alt === novasAlternativas[index]);
+
+            if (!mesmasAlternativas) {
+                alert('⚠️ REGRA 8: Não é possível alterar as alternativas de uma pergunta que já foi respondida em formulário publicado. Você deve criar uma nova pergunta.');
+                return false;
+            }
+        }
+
+        // Pode alterar (só mudou enunciado ou obrigatoriedade)
+        return true;
+
+    } catch (error) {
+        console.error('Erro ao verificar Regra 8:', error);
+        alert('Erro ao verificar restrições de edição.');
+        return false;
+    }
+}
 
 async function carregarDadosParaEdicao(id) {
     try {

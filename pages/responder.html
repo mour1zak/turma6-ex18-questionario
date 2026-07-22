@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responder Questionário</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header>
+        <h1>📝 Questionário</h1>
+    </header>
+
+    <main>
+        <div id="container-status">
+            <!-- Mensagens de erro ou status do formulário aparecerão aqui -->
+        </div>
+
+        <div id="container-formulario" style="display: none;">
+            <h2 id="titulo-formulario">Título do Formulário</h2>
+            <p id="descricao-formulario"></p>
+            
+            <form id="form-resposta">
+                <fieldset>
+                    <legend>Seus Dados</legend>
+                    <label for="nome">Nome:</label>
+                    <input type="text" id="nome" name="nome" required>
+
+                    <label for="email">E-mail:</label>
+                    <input type="email" id="email" name="email" required>
+                </fieldset>
+
+                <fieldset id="container-perguntas">
+                    <legend>Perguntas</legend>
+                    <!-- As perguntas serão injetadas aqui via JavaScript -->
+                </fieldset>
+
+                <button type="submit">Enviar Respostas</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="../js/respostas/responder.js"></script>
+</body>
+</html>
