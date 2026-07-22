@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar Nova Pergunta</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header>
+        <h1>➕ Nova Pergunta</h1>
+        <nav>
+            <a href="../index.html">Início</a>
+            <a href="perguntas.html"> Listar Perguntas</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Cadastro de Pergunta</h2>
+        <form id="form-pergunta">
+            <label for="enunciado">Enunciado da Pergunta:</label>
+            <textarea id="enunciado" name="enunciado" required></textarea>
+
+            <label for="tipo">Tipo de Pergunta:</label>
+            <select id="tipo" name="tipo" required>
+                <option value="multipla_escolha">Múltipla Escolha</option>
+                <option value="texto_curto">Texto Curto</option>
+                <option value="texto_longo">Texto Longo</option>
+                <option value="checkbox">Checkbox</option>
+            </select>
+
+            <label>
+                <input type="checkbox" id="obrigatoria" name="obrigatoria" checked>
+                Pergunta Obrigatória
+            </label>
+
+            <div id="container-alternativas">
+                <label for="alternativas">Alternativas (uma por linha):</label>
+                <textarea id="alternativas" name="alternativas" rows="5" placeholder="Opção 1&#10;Opção 2&#10;Opção 3"></textarea>
+                <small>Use apenas para "Múltipla Escolha" ou "Checkbox". Separe cada alternativa por uma linha.</small>
+            </div>
+
+            <button type="submit">Salvar Pergunta</button>
+            <a href="perguntas.html"><button type="button">Cancelar</button></a>
+        </form>
+    </main>
+
+    <script src="../js/perguntas/perguntas-form.js"></script>
+</body>
+</html>

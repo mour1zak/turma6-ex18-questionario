@@ -1,0 +1,39 @@
+ <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listagem de Formulários</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header>
+        <h1>📝 Gerenciar Formulários</h1>
+        <nav>
+            <a href="../index.html">Início</a>
+            <a href="formulario-form.html"> Novo Formulário</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Formulários Cadastrados</h2>
+        <table id="tabela-formularios">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Status</th>
+                    <th>Vigência</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Formulários serão inseridos aqui via JS -->
+            </tbody>
+        </table>
+        <p id="mensagem-vazio" style="display: none;">Nenhum formulário cadastrado ainda.</p>
+    </main>
+
+    <script src="../js/formularios/formularios.js"></script>
+</body>
+</html>

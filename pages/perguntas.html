@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listagem de Perguntas</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header>
+        <h1>📋 Gerenciar Perguntas</h1>
+        <nav>
+            <a href="../index.html">Início</a>
+            <a href="pergunta-form.html">➕ Nova Pergunta</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Perguntas Cadastradas</h2>
+        <table id="tabela-perguntas">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Enunciado</th>
+                    <th>Tipo</th>
+                    <th>Obrigatória</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- As perguntas serão inseridas aqui via JavaScript -->
+            </tbody>
+        </table>
+        <p id="mensagem-vazio" style="display: none;">Nenhuma pergunta cadastrada ainda.</p>
+    </main>
+
+    <script src="../js/perguntas/perguntas.js"></script>
+</body>
+</html>

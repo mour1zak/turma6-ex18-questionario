@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar/Editar Formulário</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header>
+        <h1>📝 Formulário</h1>
+        <nav>
+            <a href="../index.html">Início</a>
+            <a href="formularios.html">Listar Formulários</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2 id="titulo-pagina">Novo Formulário</h2>
+        <form id="form-formulario">
+            <label for="titulo">Título:</label>
+            <input type="text" id="titulo" name="titulo" required>
+
+            <label for="descricao">Descrição:</label>
+            <textarea id="descricao" name="descricao" rows="3"></textarea>
+
+            <label for="status">Status:</label>
+            <select id="status" name="status" required>
+                <option value="rascunho">Rascunho</option>
+                <option value="publicado">Publicado</option>
+                <option value="encerrado">Encerrado</option>
+            </select>
+
+            <div class="datas-vigencia">
+                <div>
+                    <label for="dataInicio">Data Início:</label>
+                    <input type="date" id="dataInicio" name="dataInicio">
+                </div>
+                <div>
+                    <label for="dataFim">Data Fim:</label>
+                    <input type="date" id="dataFim" name="dataFim">
+                </div>
+            </div>
+
+            <fieldset>
+                <legend>Selecione as Perguntas (Mínimo 1):</legend>
+                <div id="lista-perguntas">
+                    <!-- Checkboxes das perguntas serão inseridos aqui via JS -->
+                    <p>Carregando perguntas...</p>
+                </div>
+            </fieldset>
+
+            <button type="submit">Salvar Formulário</button>
+            <a href="formularios.html"><button type="button">Cancelar</button></a>
+        </form>
+    </main>
+
+    <script src="../js/formularios/formularios-form.js"></script>
+</body>
+</html>
