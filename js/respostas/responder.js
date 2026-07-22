@@ -2,7 +2,6 @@ const API_URL_FORM = 'http://localhost:3000/formularios';
 const API_URL_PERG = 'http://localhost:3000/perguntas';
 const API_URL_RESPOSTA = 'http://localhost:3000/respostas';
 
-// Pega o ID do formulário pela URL (ex: responder.html?id=1)
 const urlParams = new URLSearchParams(window.location.search);
 const formularioId = urlParams.get('id');
 
@@ -11,253 +10,223 @@ document.addEventListener('DOMContentLoaded', async () => {
     const containerForm = document.getElementById('container-formulario');
 
     if (!formularioId) {
-        containerStatus.innerHTML = '<p style="color: red;">ID do formulário não informado na URL.</p>';
+        if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">ID do formulário não informado.</p>';
         return;
     }
 
     try {
-        // 1. Buscar o formulário
         const resForm = await fetch(`${API_URL_FORM}/${formularioId}`);
         if (!resForm.ok) throw new Error('Formulário não encontrado.');
         const form = await resForm.json();
 
-        // 2. Validar Regra 3: Status e Vigência
         const statusMsg = validarStatusFormulario(form);
         if (statusMsg) {
-            containerStatus.innerHTML = `<p style="color: red; font-weight: bold;">⚠️ ${statusMsg}</p>`;
-            return; // Para a execução se estiver inválido
+            if (containerStatus) containerStatus.innerHTML = `<p style="color: red; font-weight: bold;">⚠️ ${statusMsg}</p>`;
+            return;
         }
 
-        // Se passou, exibe o formulário
-        containerForm.style.display = 'block';
-        document.getElementById('titulo-formulario').textContent = form.titulo;
-        document.getElementById('descricao-formulario').textContent = form.descricao || '';
+        if (containerForm) containerForm.style.display = 'block';
+        
+        const tituloEl = document.getElementById('titulo-formulario');
+        const descEl = document.getElementById('descricao-formulario');
+        if (tituloEl) tituloEl.textContent = form.titulo;
+        if (descEl) descEl.textContent = form.descricao || '';
 
-        // 3. Buscar as perguntas vinculadas
-        const idsQuery = form.perguntas.map(id => `id=${id}`).join('&');
         const idsQuery = form.perguntas.filter(id => id).map(id => `id=${id}`).join('&');
+        const resPergs = await fetch(`${API_URL_PERG}?${idsQuery}`);
         const perguntas = await resPergs.json();
 
-        // 4. Renderizar as perguntas
         renderizarPerguntas(perguntas);
         
-        // 5. Adicionar evento de submit
-        document.getElementById('form-resposta').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            await processarResposta(form, perguntas);
-        });
-
+        const formResposta = document.getElementById('form-resposta');
+        if (formResposta) {
+            formResposta.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                await processarResposta(form, perguntas);
+            });
+        }
     } catch (error) {
-        console.error(error);
-        containerStatus.innerHTML = `<p style="color: red;">Erro ao carregar o formulário: ${error.message}</p>`;
+        if (containerStatus) containerStatus.innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
     }
 });
 
-// Função para validar a Regra 3 do enunciado
 function validarStatusFormulario(form) {
     if (form.status !== 'publicado') {
-        return 'Este formulário não está disponível no momento (Status: ' + form.status + ').';
+        return 'Formulário não disponível (Status: ' + form.status + ').';
     }
-
     const agora = new Date();
-    
-    if (form.dataInicio && new Date(agora) < new Date(form.dataInicio)) {
-        return 'Este formulário ainda não está disponível para resposta.';
+    if (form.dataInicio && agora < new Date(form.dataInicio)) {
+        return 'Formulário ainda não disponível.';
     }
-    
-    if (form.dataFim && new Date(agora) > new Date(form.dataFim)) {
-        return 'O prazo para responder este formulário encerrou.';
+    if (form.dataFim && agora > new Date(form.dataFim)) {
+        return 'Prazo para resposta encerrado.';
     }
-
-    return null; // null significa que está tudo ok
+    return null;
 }
 
-// Função para desenhar as perguntas na tela
 function renderizarPerguntas(perguntas) {
     const container = document.getElementById('container-perguntas');
+    if (!container) return;
     container.innerHTML = '';
-
+    
     perguntas.forEach((pergunta, index) => {
         const div = document.createElement('div');
         div.style.marginBottom = '20px';
-        div.style.padding = '10px';
-        div.style.border = '1px solid #eee';
+        div.style.padding = '15px';
+        div.style.border = '1px solid #ddd';
         div.style.borderRadius = '5px';
-
-        const obrigatorio = pergunta.obrigatoria ? '<span style="color: red;">*</span>' : '';
         
+        const obrigatorio = pergunta.obrigatoria ? '<span style="color: red;">*</span>' : '';
         let htmlInput = '';
 
-        // Lógica para renderizar o input correto baseado no tipo (Seção 3 do enunciado)
         switch (pergunta.tipo) {
             case 'texto_curto':
-                htmlInput = `<input type="text" name="pergunta_${pergunta.id}" maxlength="200">`;
+                htmlInput = `<input type="text" name="pergunta_${pergunta.id}" maxlength="200" style="width: 100%; padding: 8px;">`;
                 break;
             case 'texto_longo':
-                htmlInput = `<textarea name="pergunta_${pergunta.id}" rows="4"></textarea>`;
+                htmlInput = `<textarea name="pergunta_${pergunta.id}" rows="4" style="width: 100%; padding: 8px;"></textarea>`;
                 break;
             case 'multipla_escolha':
                 pergunta.alternativas.forEach(alt => {
-                    htmlInput += `
-                        <label style="display: block; margin: 5px 0;">
-                            <input type="radio" name="pergunta_${pergunta.id}" value="${alt}"> ${alt}
-                        </label>
-                    `;
+                    htmlInput += `<label style="display: block; margin: 5px 0;"><input type="radio" name="pergunta_${pergunta.id}" value="${alt}"> ${alt}</label>`;
                 });
                 break;
             case 'checkbox':
                 pergunta.alternativas.forEach(alt => {
-                    htmlInput += `
-                        <label style="display: block; margin: 5px 0;">
-                            <input type="checkbox" name="pergunta_${pergunta.id}" value="${alt}"> ${alt}
-                        </label>
-                    `;
+                    htmlInput += `<label style="display: block; margin: 5px 0;"><input type="checkbox" name="pergunta_${pergunta.id}" value="${alt}"> ${alt}</label>`;
                 });
                 break;
         }
 
-        div.innerHTML = `
-            <p><strong>${index + 1}. ${pergunta.enunciado}</strong> ${obrigatorio}</p>
-            ${htmlInput}
-        `;
+        div.innerHTML = `<p><strong>${index + 1}. ${pergunta.enunciado}</strong> ${obrigatorio}</p>${htmlInput}`;
         container.appendChild(div);
     });
 }
 
-// Função para processar a resposta (validação + envio)
 async function processarResposta(form, perguntas) {
     const containerStatus = document.getElementById('container-status');
-    containerStatus.innerHTML = '';
+    if (containerStatus) containerStatus.innerHTML = '';
 
-    // 1. Validar dados do usuário
-    const nome = document.getElementById('nome').value.trim();
-    const email = document.getElementById('email').value.trim().toLowerCase().trim();
+    const nomeInput = document.getElementById('nome');
+    const emailInput = document.getElementById('email');
+    
+    if (!nomeInput || !emailInput) {
+        if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">Erro: Campos não encontrados.</p>';
+        return;
+    }
 
-    // Validação Regra 5: Nome (mínimo 2 caracteres)
+    const nome = nomeInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+
     if (nome.length < 2) {
-        containerStatus.innerHTML = '<p style="color: red;">⚠️ O nome deve ter pelo menos 2 caracteres.</p>';
+        if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">⚠️ Nome deve ter pelo menos 2 caracteres.</p>';
         return;
     }
 
-    // Validação Regra 5: Email (formato válido)
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        containerStatus.innerHTML = '<p style="color: red;">⚠️ E-mail inválido.</p>';
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexEmail.test(email)) {
+        if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">⚠️ E-mail inválido.</p>';
         return;
     }
 
-    // 2. Verificar duplicidade de resposta (Regra 4)
+    // Regra 4: Verificar duplicidade
     try {
-        const resDuplicidade = await fetch(`${API_URL_RESPOSTA}?formularioId=${form.id}&email=${email}`);
-        const respostas = await resDuplicidade.json();
-
-        if (respostas.length > 0) {
-            containerStatus.innerHTML = '<p style="color: red;">⚠️ Você já respondeu este formulário com este e-mail.</p>';
+        const resDuplicidade = await fetch(`${API_URL_RESPOSTA}?formularioId=${form.id}`);
+        const respostasExistentes = await resDuplicidade.json();
+        const jaRespondeu = respostasExistentes.some(r => r.email.toLowerCase().trim() === email);
+        
+        if (jaRespondeu) {
+            if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">⚠️ Você já respondeu este formulário.</p>';
             return;
         }
     } catch (error) {
-        console.error('Erro ao verificar duplicidade:', error);
-        containerStatus.innerHTML = '<p style="color: red;">Erro ao verificar duplicidade de resposta.</p>';
+        if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">Erro ao verificar duplicidade.</p>';
         return;
     }
 
-    // 3. Coletar respostas
-    const respostas = [];
-    let perguntaObrigatoriaSemResposta = [];
+    // Coletar respostas - CORREÇÃO AQUI!
+    const respostasArray = [];
+    const perguntasFaltando = [];
 
-    // Para cada pergunta, coletar a resposta
-    perguntas.forEach(pergunta => {
+    for (const pergunta of perguntas) {
         let valor = null;
-        const input = document.querySelector(`input[name="pergunta_${pergunta.id}"]:checked`) || 
-                      document.querySelector(`textarea[name="pergunta_${pergunta.id}"]`) || 
-                      document.querySelector(`input[name="pergunta_${pergunta.id}"]`);
         
-        // Para checkbox, precisamos coletar todos os marcados
         if (pergunta.tipo === 'checkbox') {
             const checkboxes = document.querySelectorAll(`input[name="pergunta_${pergunta.id}"]:checked`);
             valor = Array.from(checkboxes).map(cb => cb.value);
-        } else if (input) {
-            valor = input.value;
+        } else {
+            const input = document.querySelector(`[name="pergunta_${pergunta.id}"]:checked`) || 
+                          document.querySelector(`[name="pergunta_${pergunta.id}"]`);
+            if (input) valor = input.value;
         }
 
-        // Verificar se é obrigatória e não tem resposta
         if (pergunta.obrigatoria && !valor) {
-            perguntaObrigatoriaSemResposta.push(pergunta.enunciado);
-        } else if (valor) {
-            // Validação do valor conforme tipo da pergunta
-            const validacao = validarResposta(pergunta, valor);
-            if (validacao) {
-                containerStatus.innerHTML = `<p style="color: red;">⚠️ ${validacao}</p>`;
-                return;
-            }
-            respostas.push({ perguntaId: pergunta.id, valor });
+            perguntasFaltando.push(pergunta.enunciado);
+        } else if (valor !== null) {
+            // CORREÇÃO: Adicionar no formato CORRETO { perguntaId, valor }
+            respostasArray.push({ 
+                perguntaId: pergunta.id, 
+                valor: valor 
+            });
         }
-    });
+    }
 
-    // Verificar se há perguntas obrigatórias sem resposta
-    if (perguntaObrigatoriaSemResposta.length > 0) {
-        containerStatus.innerHTML = `<p style="color: red;">⚠️ Respostas faltando: ${perguntaObrigatoriaSemResposta.join(', ')}</p>`;
+    if (perguntasFaltando.length > 0) {
+        if (containerStatus) containerStatus.innerHTML = `<p style="color: red;">⚠️ Responda: ${perguntasFaltando.join(', ')}</p>`;
         return;
     }
 
-    // 4. Enviar para o servidor
+    // Enviar resposta - ESTRUTURA CORRETA CONFORME ENUNCIADO
     try {
         const novaResposta = {
             formularioId: form.id,
             nome: nome,
             email: email,
-            respostas: respostas,
+            respostas: respostasArray,  // Array de { perguntaId, valor }
             enviadoEm: new Date().toISOString()
         };
 
+        console.log('Enviando resposta:', novaResposta);
+
         const response = await fetch(API_URL_RESPOSTA, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(novaResposta)
         });
 
         if (response.ok) {
-            containerStatus.innerHTML = '<p style="color: green; font-weight: bold;">✅ Resposta enviada com sucesso!</p>';
-            document.getElementById('form-resposta').reset();
+            if (containerStatus) {
+                containerStatus.innerHTML = `
+                    <div style="background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 20px; text-align: center; margin-top: 10px;">
+                        <h3 style="color: #155724; margin: 0;">✅ Resposta enviada com sucesso!</h3>
+                        <p style="color: #155724; margin: 10px 0 0 0;">Obrigado por participar!</p>
+                    </div>
+                `;
+            }
+            const formResposta = document.getElementById('form-resposta');
+            if (formResposta) formResposta.reset();
         } else {
-            containerStatus.innerHTML = '<p style="color: red;">Erro ao enviar a resposta.</p>';
+            if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">Erro ao enviar.</p>';
         }
     } catch (error) {
-        console.error('Erro ao enviar resposta:', error);
-        containerStatus.innerHTML = '<p style="color: red;">Erro de conexão com o servidor.</p>';
+        console.error('Erro:', error);
+        if (containerStatus) containerStatus.innerHTML = '<p style="color: red;">Erro de conexão.</p>';
     }
 }
 
-// Função para validar a resposta conforme o tipo da pergunta
 function validarResposta(pergunta, valor) {
     switch (pergunta.tipo) {
         case 'texto_curto':
-            if (valor.length > 200) {
-                return 'Texto curto não pode ter mais de 200 caracteres.';
-            }
-            return null;
+            return valor.length > 200 ? 'Máximo 200 caracteres.' : null;
         case 'texto_longo':
-            return null; // Sem limite de tamanho
+            return null;
         case 'multipla_escolha':
-            if (!pergunta.alternativas.includes(valor)) {
-                return 'Valor inválido para múltipla escolha.';
-            }
-            return null;
+            return pergunta.alternativas.includes(valor) ? null : 'Valor inválido.';
         case 'checkbox':
-            if (!Array.isArray(valor)) {
-                return 'Checkbox deve ser um array de valores.';
-            }
-            if (valor.length === 0) {
-                return 'Checkbox deve ter pelo menos uma opção selecionada.';
-            }
-            // Verificar se todos os valores existem nas alternativas
+            if (!Array.isArray(valor) || valor.length === 0) return 'Selecione pelo menos uma opção.';
             const invalidos = valor.filter(v => !pergunta.alternativas.includes(v));
-            if (invalidos.length > 0) {
-                return `Valores inválidos para checkbox: ${invalidos.join(', ')}.`;
-            }
-            return null;
+            return invalidos.length > 0 ? `Opções inválidas: ${invalidos.join(', ')}.` : null;
         default:
-            return 'Tipo de pergunta não reconhecido.';
+            return 'Tipo não reconhecido.';
     }
 }
